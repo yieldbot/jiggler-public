@@ -1,0 +1,100 @@
+.disabled .prompt {
+  opacity: 0.6;
+}
+
+#confirmation {
+  padding: 0.1em;
+  border: 0.3em solid #2CB14A;
+}
+
+form {
+  margin-top: 0.2em;
+}
+
+body {
+  margin: 0em;
+  font-size: 1.1em;
+}
+
+#navbar {
+  background-color: #1F0047;
+  width: 100%;
+  padding: 1em 0 0.5em 0;
+  box-sizing: border-box;
+  color: white;
+  margin-bottom: 1em;
+  text-decoration: none;
+  color: white;
+}
+
+#navbar h1 {
+  margin-top: 0em;
+  padding-left: 0.5em;
+}
+
+#navbar a {
+  text-decoration: none;
+  color: white;
+}
+
+#navbar li a {
+  padding: 0.75em;
+}
+
+#navbar ul {
+  margin: 0;
+  padding: 0;
+}
+
+#navbar li {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: inline;
+}
+
+#navbar .curpage a {
+  background-color: white;
+  color: #1F0047;
+}
+
+.footer {
+  margin: 1em;
+}
+
+button, input {
+  font-size: 0.9em;
+  margin: 0.1em;
+}
+
+form {
+  display: flex;
+  align-items: center;
+}
+
+input[name=target] {
+  flex: 2;
+}
+
+#content {
+  margin: 0.5em;
+}
+
+.hidden {
+  display: none;
+}
+
+table, th, td {
+  border: 1px solid black;
+  padding: 0.1em;
+  border-collapse: collapse;
+}
+
+table {
+  margin-top: 0.5em;
+}
+
+th, td {
+  padding-left: 0.3em;
+  padding-right: 0.3em;
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Jiggler Short Links",
+  "description" : "To use, type 'j' plus a short link into the Omnibox.",
+  "version": "0.1",
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "omnibox": { "keyword" : "j" },
+  "manifest_version": 2
+}
