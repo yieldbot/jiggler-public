@@ -1,11 +1,17 @@
 ;; Copyright (c) 2017 Yieldbot
 (ns jiggler.main
   (:require
+   [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [com.stuartsierra.component :as component]
    [jiggler.db :as db]
    [jiggler.routes :as routes])
   (:gen-class))
+
+(defn ensure-ends-in-slash [s]
+  (-> s
+      (str "/")
+      (str/replace #"/+$" "/")))
 
 (def cli-options
   [["-P" "--port PORT" "Port to serve HTTP"
@@ -28,7 +34,8 @@
     :id :password
     :default (System/getenv "PGPASSWORD")]
    [nil "--base-url PATH" "The canonical URL to find this on the web"
-    :default "/"]
+    :default "/"
+    :parse-fn ensure-ends-in-slash]
    [nil "--sqlite FILE" "Run with a SQLite database"]
    [nil "--help"]])
 
