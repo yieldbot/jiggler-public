@@ -94,7 +94,7 @@
                                    {:shortlink shortlink :target target :modified? true})]
       (let [resp ((mk-routes) (-> (mock/request :post "/_/link")
                                   (mock/body {:shortlink "a" :target "b"})
-                                  (mock/header :x-oauth-user-email "dummy@yieldbot.com")))]
+                                  (mock/header :x-forwarded-email "dummy@yieldbot.com")))]
         (is (= {"a" ["b" "dummy@yieldbot.com"]} @setval))
         (is (= 201 (:status resp)))
         (is (html? resp))

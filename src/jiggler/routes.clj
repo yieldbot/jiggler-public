@@ -200,12 +200,12 @@
             (link-template base-url)
             (html-resp 200)))
      (cc/POST "/link" {{:keys [shortlink target]} :params
-                       {:strs [x-oauth-user-email]} :headers}
+                       {:strs [x-forwarded-email]} :headers}
        (cond
         (not (and shortlink target)) {:status 400 :body "Missing parameters"}
         (disallowed? shortlink) {:status 401
                                  :body "Forbidden"}
-        :else (->> (db/update-link database shortlink target x-oauth-user-email)
+        :else (->> (db/update-link database shortlink target x-forwarded-email)
                    (link-template base-url)
                    (html-resp 201))))
      (cc/GET "/go" {{:keys [link]} :params}
