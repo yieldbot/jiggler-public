@@ -129,15 +129,32 @@
     (is (= {:status 307 :headers {"Location" "http://CANONICAL/_/link?shortlink=a"} :body ""}
            ((mk-routes) (mock/request :get "/a"))))))
 
+(deftest test-go-redir-not-found
+  (with-redefs [db/get-link #(hash-map :shortlink %2)]
+    (is (= {:status 307 :headers {"Location" "http://CANONICAL/_/link?shortlink=a"} :body ""}
+           (-> ((mk-routes) (mock/request :get "/_/go?link=a"))
+               (update :headers dissoc "Content-Type"))))))
+
 (deftest test-redir-found
   (let [link-count (atom {})]
     (with-redefs [db/get-link #(hash-map :shortlink %2 :target "b")
                   db/increment-usage! (fn [_ sl]
                                         (swap! link-count update sl
                                                #(inc (or % 0))))]
-    (is (= {:status 307 :headers {"Location" "b"} :body ""}
-           ((mk-routes) (mock/request :get "/a"))))
-    (is (= {"a" 1} @link-count)))))
+      (is (= {:status 307 :headers {"Location" "b"} :body ""}
+             ((mk-routes) (mock/request :get "/a"))))
+      (is (= {"a" 1} @link-count)))))
+
+(deftest test-go-redir-found
+  (let [link-count (atom {})]
+    (with-redefs [db/get-link #(hash-map :shortlink %2 :target "b")
+                  db/increment-usage! (fn [_ sl]
+                                        (swap! link-count update sl
+                                               #(inc (or % 0))))]
+      (is (= {:status 307 :headers {"Location" "b"} :body ""}
+             (-> ((mk-routes) (mock/request :get "/_/go?link=a"))
+                 (update :headers dissoc "Content-Type"))))
+      (is (= {"a" 1} @link-count)))))
 
 (deftest test-healthz
   (is (= {:status 200
