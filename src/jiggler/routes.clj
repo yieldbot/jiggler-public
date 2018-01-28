@@ -128,6 +128,11 @@
   [:span.selflink] (html/substitute base-url)
   [:a.selflink] (update-attr :href #(str base-url %)))
 
+(html/deftemplate setup-template "templates/setup.html" [base-url]
+  [:head] (html/substitute (head-snippet base-url "Jiggler Short Links Help"))
+  [:#navbar] (html/substitute (navbar-snippet base-url :help))
+  [:form.selflink] (update-attr :action #(str base-url %)))
+
 (html/defsnippet search-result-snippet "templates/search-results.html" [:.search-result]
   [base-url {:keys [shortlink target usage]}]
   [:.search-shortlink :a] (html/do-> (html/set-attr :href (link-edit-url base-url shortlink))
@@ -168,6 +173,17 @@
   {:status 307
    :headers {"Location" target}})
 
+(defn redir
+  "Look up the shortlink in the database and make a redirection response."
+  [database base-url shortlink more query-string]
+  (let [{:keys [target] :as link} (db/get-link database shortlink)]
+    (if target
+      (do
+        (db/increment-usage! database shortlink)
+        (redir-resp (str target more
+                         (if query-string (str "?" query-string) ""))))
+      (redir-resp (link-edit-url base-url shortlink)))))
+
 (defn healthz []
   {:status 200
    :headers {"Content-Type" "text/plain"}
@@ -184,15 +200,20 @@
             (link-template base-url)
             (html-resp 200)))
      (cc/POST "/link" {{:keys [shortlink target]} :params
-                       {:strs [x-oauth-user-email]} :headers}
+                       {:strs [x-forwarded-email]} :headers}
        (cond
         (not (and shortlink target)) {:status 400 :body "Missing parameters"}
         (disallowed? shortlink) {:status 401
                                  :body "Forbidden"}
-        :else (->> (db/update-link database shortlink target x-oauth-user-email)
+        :else (->> (db/update-link database shortlink target x-forwarded-email)
                    (link-template base-url)
                    (html-resp 201))))
+     (cc/GET "/go" {{:keys [link]} :params}
+       (let [[_ shortlink more query-string]
+             (re-matches #"([^/?]*)(/[^?]*)?(?:\?(.*))?" link)]
+         (redir database base-url shortlink more query-string)))
      (cc/GET "/help" [] (html-resp 200 (help-template base-url)))
+     (cc/GET "/setup.html" [] (html-resp 200 (setup-template base-url)))
      (cc/GET "/search" [query]
        (html-resp 200 (search-template base-url query (db/search database query 30))))
      (cc/GET "/healthz" []
@@ -205,28 +226,24 @@
 (defn redir-route [database base-url]
   (cc/GET "/:shortlink{[^/?]*}:more{.*}" req
     (let [{:keys [query-string params]} req
-          {:keys [shortlink more]} params
-          {:keys [target] :as link} (db/get-link database shortlink)]
-      (if target
-        (do
-          (db/increment-usage! database shortlink)
-          (redir-resp (str target more
-                           (if query-string (str "?" query-string) ""))))
-        (redir-resp (link-edit-url base-url shortlink))))))
+          {:keys [shortlink more]} params]
+      (redir database base-url shortlink more query-string))))
 
 (defn jiggler-routes [database base-url]
   (cc/routes
-    (-> (ui-routes database base-url)
-        (ring-defaults/wrap-defaults
-         ;; NOTE(lbarrett, 2016-11-09): Set proxy to false to avoid an
-         ;; assertion in ring-ssl/wrap-forwarded-scheme. I don't believe the
-         ;; proxy wrappers are really doing anything for us anyway.
-         (assoc ring-defaults/api-defaults :proxy false)))
-    ;; Hardcode the "link" link.
-    (cc/GET "/link" []
-      (redir-resp base-url))
-    (redir-route database base-url)
-    (route/not-found "Not found")))
+   (-> (ui-routes database base-url)
+       (ring-defaults/wrap-defaults
+        ;; NOTE(lbarrett, 2016-11-09): Set proxy to false to avoid an
+        ;; assertion in ring-ssl/wrap-forwarded-scheme. I don't believe the
+        ;; proxy wrappers are really doing anything for us anyway.
+        (-> ring-defaults/api-defaults
+            (assoc :proxy false)
+            (assoc-in [:responses :absolute-redirects] false))))
+   ;; Hardcode the "link" link.
+   (cc/GET "/link" []
+     (redir-resp base-url))
+   (redir-route database base-url)
+   (route/not-found "Not found")))
 
 (defrecord Routes [base-url database routes]
   component/Lifecycle

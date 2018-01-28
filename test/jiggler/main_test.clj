@@ -8,6 +8,11 @@
    [jiggler.main :as main]
    [jiggler.routes :as routes]))
 
+(deftest test-ensure-ends-in-slash
+  (is (= "http://jiggler/a/" (main/ensure-ends-in-slash "http://jiggler/a")))
+  (is (= "http://jiggler/a/" (main/ensure-ends-in-slash "http://jiggler/a/")))
+  (is (= "http://jiggler/a/" (main/ensure-ends-in-slash "http://jiggler/a//"))))
+
 (deftest test-errors
   (binding [*out* (jio/writer "/dev/null")]
     (with-redefs [main/exit! identity]
