@@ -231,19 +231,19 @@
 
 (defn jiggler-routes [database base-url]
   (cc/routes
-    (-> (ui-routes database base-url)
-        (ring-defaults/wrap-defaults
-         ;; NOTE(lbarrett, 2016-11-09): Set proxy to false to avoid an
-         ;; assertion in ring-ssl/wrap-forwarded-scheme. I don't believe the
-         ;; proxy wrappers are really doing anything for us anyway.
+   (-> (ui-routes database base-url)
+       (ring-defaults/wrap-defaults
+        ;; NOTE(lbarrett, 2016-11-09): Set proxy to false to avoid an
+        ;; assertion in ring-ssl/wrap-forwarded-scheme. I don't believe the
+        ;; proxy wrappers are really doing anything for us anyway.
         (-> ring-defaults/api-defaults
             (assoc :proxy false)
             (assoc-in [:responses :absolute-redirects] false))))
-    ;; Hardcode the "link" link.
-    (cc/GET "/link" []
-      (redir-resp base-url))
-    (redir-route database base-url)
-    (route/not-found "Not found")))
+   ;; Hardcode the "link" link.
+   (cc/GET "/link" []
+     (redir-resp base-url))
+   (redir-route database base-url)
+   (route/not-found "Not found")))
 
 (defrecord Routes [base-url database routes]
   component/Lifecycle
